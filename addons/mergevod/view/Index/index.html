@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>视频去重合并</title>
+<style>
+  body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f6f8;margin:0;padding:24px;color:#1f2937}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:#6b7280;font-size:13px;margin-bottom:20px}
+  .card{background:#fff;border:1px solid #e6e6e6;border-radius:12px;padding:18px 22px;margin-bottom:14px}
+  .stat{display:flex;gap:18px;flex-wrap:wrap}
+  .stat .num{font-size:26px;font-weight:700}
+  .stat .lbl{color:#6b7280;font-size:13px;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eef1f4;vertical-align:top}
+  th{color:#6b7280;font-weight:600;white-space:nowrap}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:4px;word-break:break-all}
+  .btn{display:inline-block;padding:9px 20px;border-radius:8px;font-size:14px;border:none;cursor:pointer;text-decoration:none;color:#fff}
+  .btn-ok{background:#16a34a}.btn-ok:hover{background:#15803d}
+  .btn-warn{background:#dc2626}.btn-warn:hover{background:#b91c1c}
+  .empty{color:#16a34a;font-weight:600}
+  .tip{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;font-size:13px;margin-bottom:14px}
+  .tip b{color:#b45309}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>视频去重合并</h1>
+  <div class="sub">合并不同播放器下的相同资源 · 版本 1.0.0</div>
+
+  <div class="tip">
+    <b>定时任务地址</b>（可用宝塔 cron 每小时调用一次，重复记录会被自动合并并删除）：
+    <br><code>/addons/mergevod/run.php?key=你的密钥</code>
+    <br>示例：<code>curl -s "http://你的域名/addons/mergevod/run.php?key=你的密钥"</code>
+    <br><span style="color:#b45309">说明：使用插件自带的物理入口 <code>run.php</code>（nginx 直接执行），不依赖 thinkphp 伪静态路由。</span>
+  </div>
+
+  <div class="card stat">
+    <div><div class="num">{$total}</div><div class="lbl">视频总数</div></div>
+    <div><div class="num">{$dupCount}</div><div class="lbl">重复组数</div></div>
+  </div>
+
+  {if condition="$dupCount eq 0"}
+    <div class="card"><span class="empty">没有发现可合并的重复记录，无需合并。</span></div>
+  {else /}
+    <div class="card">
+      <p style="margin:0 0 10px"><b>重复分组预览</b>（每组保留播放源最多的一条，其余播放源汇入后删除）</p>
+      <table>
+        <tr><th>片名（保留 id）</th><th>分类</th><th>合并后播放源</th><th>将删除记录 id</th></tr>
+        {foreach name="groups" item="g"}
+          <tr>
+            <td>{$g[0]['vod_name']} <code>(id={$g[0]['vod_id']})</code></td>
+            <td>{$g[0]['type_id']}</td>
+            <td><code>{$g[0]['vod_play_from']}</code></td>
+            <td>
+              {foreach name="g" item="r" key="k"}
+                {if condition="$k gt 0"}{$r['vod_id']}{if condition="!$k eq count($g)-1"},{/if}{/if}
+              {/foreach}
+            </td>
+          </tr>
+        {/foreach}
+      </table>
+    </div>
+    <div class="card">
+      <a class="btn btn-warn" href="/addons/mergevod/run.php?key=你的密钥"
+         onclick="return confirm('确认执行合并？合并后重复记录将被{'删除/备份'}。')">执行合并</a>
+      <span style="margin-left:12px;color:#6b7280;font-size:13px">执行合并会立即运行一次合并，输出结果文本；也可用上方定时任务地址定时执行。</span>
+    </div>
+  {/if}
+</div>
+</body>
+</html>
